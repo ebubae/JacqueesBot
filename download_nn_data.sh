@@ -13,3 +13,5 @@ unzip irmas_testing2.zip
 wget https://zenodo.org/record/1290750/files/IRMAS-TestingData-Part3.zip?download=1
 mv IRMAS-TestingData-Part3.zip\?download\=1 irmas_testing3.zip
 unzip irmas_testing3.zip
+
+rm irmas*.zip
