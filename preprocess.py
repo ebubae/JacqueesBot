@@ -1,10 +1,12 @@
 from librosa.core import load
 from librosa.feature import melspectrogram
-from os.path import isdir, join
+from multiprocessing import Pool
+from os.path import isdir, join, exists
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import numpy as np
 import os
+import pickle
 import subprocess
 
 
@@ -18,30 +20,66 @@ if not isdir(config['train_dir']):
 
 train_dir = config['train_dir']
 
+def process_audio(f_path):
+  """Return preprocessed audio file (normalized mel spectrogram)"""
+  raw, _ = load(f_path)
+  #raw /= max(abs(raw.min()), raw.max())
+  mel = melspectrogram(raw, n_mels=128, n_fft=1024).T
+  mel += np.min(mel)
+  mel /= np.max(mel)
+  mel = np.expand_dims(mel, axis=2) # add extra channel
+
+  return np.log(mel)
+
+def append_data(x):
+  data, label = x
+  all_data.append(data)
+  all_labels.append(label)
 
 def preprocess():
+  #files_ready = exists('train_data.pkl') and exists('test_data.pkl') and exists('train_labels.pkl') and exists('test_labels.pkl')
+  files_ready = exists('all_data.pkl') and exists('all_labels.pkl')
+
+  if files_ready:
+    print("pre-packaged preprocessing...")
+    all_data   = pickle.load(open('all_data.pkl', 'r'))
+    all_labels = pickle.load(open('all_labels.pkl', 'r'))
+    train_data, test_data, train_labels, test_labels = train_test_split(all_data, all_labels)
+    #train_data   = pickle.load(open('train_data.pkl', 'r'))
+    #train_labels = pickle.load(open('train_labels.pkl', 'r'))
+    #test_data    = pickle.load(open('test_data.pkl', 'r'))
+    #test_labels  = pickle.load(open('test_labels.pkl', 'r'))
+    return train_data, train_labels, test_data, test_labels
+
+  #global all_data
+  #global all_labels
+
+  all_data= []
+  all_labels= [] # yikes let this breathe
+
+  #threads = []
   print("beginning preprocessing")
-  all_data = []
-  all_labels = []
-  
-  for idx, label in enumerate(label_list):
+  for idx, label in enumerate(tqdm(label_list)):
+    #pool = Pool(4)
     data_dir = join(train_dir, label)
     all_files = os.listdir(data_dir)
     # you live with your mother ayy
-    for f in tqdm(all_files):
+    for f in all_files:
       f_path = join(data_dir, f)
-      raw, _ = load(f_path)
-      raw /= max(abs(raw.min()), raw.max())
-      mel = melspectrogram(raw, n_mels=128, n_fft=1024).T
-      mel = np.expand_dims(mel, axis=2)
-      all_data.append(np.log(mel))
+      proc = process_audio(f_path)
+      all_data.append(proc)
       all_labels.append(idx)
+      #r = pool.apply_async(process_audio, args=(f_path, idx), callback=append_data)
+      #r.wait()
+    #pool.close()
+    #pool.join()
+    print("processed " + label)
   all_data = np.array(all_data)
-  #all_data = np.expand_dims(all_data, axis=0)
   # creating one-hot labels 
   all_labels = np.array(all_labels)
+  print(all_labels)
   all_labels = np.eye(len(label_list))[all_labels]
   print("before split target shape = " + str(all_labels.shape))
-  train_data, test_data, train_labels, test_labels = train_test_split(all_data, all_labels, test_size=0.2, shuffle=True)
+  print("before split data shape = " + str(all_data.shape))
   print("completed preprocessing")
-  return train_data, train_labels, test_data, test_labels
+  return all_data, all_labels
