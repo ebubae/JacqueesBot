@@ -23,12 +23,9 @@ train_dir = config['train_dir']
 def process_audio(f_path):
   """Return preprocessed audio file (normalized mel spectrogram)"""
   raw, _ = load(f_path)
-  #raw /= max(abs(raw.min()), raw.max())
+  raw /= max(abs(raw.min()), raw.max())
   mel = melspectrogram(raw, n_mels=128, n_fft=1024).T
-  mel += np.min(mel)
-  mel /= np.max(mel)
   mel = np.expand_dims(mel, axis=2) # add extra channel
-
   return np.log(mel)
 
 def append_data(x):
