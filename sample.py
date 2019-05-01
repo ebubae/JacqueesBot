@@ -17,6 +17,9 @@ class Sample:
   def __len__(self):
     return self.length
   
+  def __str__(self):
+    return "{} sample @ {}".format(self.instrument, self.path)
+    
   # TODO: I've kept this here for reference but we should delete this code
   def add(self, media_item):
     track = RPR_InsertMedia(params.MEDIA_FILE_LOCATION + name, 1)
