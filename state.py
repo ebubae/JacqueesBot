@@ -32,7 +32,8 @@ class State:
     if to_remove:
       self.inserted[act.insert_id] = None
       self.stacked = {(s1, s2) for (s1, s2) in self.stacked if s1 != to_remove and s2 != to_remove}
-      # TODO: Devin remove from REAPER, also I guess remove the track too
+    # TODO: Devin remove from REAPER, also I guess remove the track too
+    RPR_DeleteTrack(self.track)
 
 
   def insert(sample_id, t)
@@ -51,4 +52,9 @@ class State:
 
     self.times.append((start_time, end_time))
     self.inserted.append((sample_id, t))
-    #TODO: Devin insert into REAPER new REAPER track
+    #TODO: Devin pls fix reaper things I may have broken
+		track = RPR_InsertMedia(params.MEDIA_FILE_LOCATION + sample.name, 1)
+		track_idx = RPR_CountTracks(0)
+		media_track = RPR_GetTrack(0,track_idx)
+		self.track = media_track
+		return media_track, track_idx
