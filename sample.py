@@ -12,6 +12,7 @@ class Sample:
     self.pitch = str(pitch)
     self.instrument = str(instrument)
     self.length = float(length)
+    self.track = None
 
   def __len__(self):
     return self.length
