@@ -22,7 +22,7 @@ class State:
       s = Sample(**d)
       self.samples.append(s)
 
-  def remove(insert_id):
+  def remove(self, insert_id):
     '''
     Removes a specific instance of a sample from the state 
     also removes its references (if any) in stacked
@@ -31,24 +31,20 @@ class State:
     to_remove = self.inserted[act.insert_id]
     if to_remove:
       self.inserted[act.insert_id] = None
-      self.stacked = {(s1, s2) for (s1, s2) in self.stacked if s1 != to_remove and s2 != to_remove}
+      self.stacked -= self.get_removable_stacked(act.insert_id)
     # TODO: Devin remove from REAPER, also I guess remove the track too
     RPR_DeleteTrack(self.track)
 
 
-  def insert(sample_id, t)
+  def insert(self, sample_id, t)
     '''
     Inserts a sample into the state at a specific time
     '''
     # TODO: check if valid sample ID and time
     start_time = t
     end_time = t + len(self.samples[sample_id])
-    new_idx = len(self.inserted)
 
-    for insert_idx, (s, e) in enumerate(self.times):
-      not_stacked = e < start_time or s > end_time
-      if not not_stacked:
-        self.stacked.append((insert_idx, new_idx)) # older ID first
+    self.stacked |= self.get_new_stacked(sample_id, t)
 
     self.times.append((start_time, end_time))
     self.inserted.append((sample_id, t))
@@ -58,3 +54,21 @@ class State:
 		media_track = RPR_GetTrack(0,track_idx)
 		self.track = media_track
 		return media_track, track_idx
+
+  def get_removable_stacked(self, insert_idx):
+    return {(s1, s2) for (s1, s2) in self.stacked if s1 != insert_idx and s2 != insert_idx}
+
+  def get_new_stacked(self, sample_id, t)
+    '''
+    Return the new elements to add to stacked after the hypothetical addition
+    of sample at sample_id at time t
+    '''
+    new_idx = len(self.inserted)
+    new_stacked = set()
+
+    for insert_idx, (s, e) in enumerate(self.times):
+      not_stacked = e < start_time or s > end_time
+      if not not_stacked:
+        new_stacked.add((insert_idx, new_idx)) # older ID first
+
+    return new_stacked
