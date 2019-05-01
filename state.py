@@ -18,7 +18,7 @@ class State:
     self.stacked = set()
     self.min_delta = min_delta
     data = json.load(config)
-    for d in data[('samples']:
+    for d in data[('samples')]:
       s = Sample(**d)
       self.samples.append(s)
 
@@ -28,12 +28,14 @@ class State:
     also removes its references (if any) in stacked
     '''
     # TODO: check valid insert ID
-    to_remove = self.inserted[act.insert_id]
+    to_remove = self.inserted[insert_id]
     if to_remove:
+      track = samples[to_remove[0]].track
       self.inserted[act.insert_id] = None
-      self.stacked -= self.get_removable_stacked(act.insert_id)
+      self.stacked -= self.get_removable_stacked(insert_id)
+      RPR_DeleteTrack(track)
+
     # TODO: Devin remove from REAPER, also I guess remove the track too
-    RPR_DeleteTrack(self.track)
 
 
   def insert(self, sample_id, t)
@@ -41,19 +43,20 @@ class State:
     Inserts a sample into the state at a specific time
     '''
     # TODO: check if valid sample ID and time
+    sample = samples[sample_id]
     start_time = t
-    end_time = t + len(self.samples[sample_id])
+    end_time = t + len(sample)
 
     self.stacked |= self.get_new_stacked(sample_id, t)
 
     self.times.append((start_time, end_time))
     self.inserted.append((sample_id, t))
     #TODO: Devin pls fix reaper things I may have broken
-		track = RPR_InsertMedia(params.MEDIA_FILE_LOCATION + sample.name, 1)
+		track = RPR_InsertMedia(params.MEDIA_FILE_LOCATION + sample.path, 1)
 		track_idx = RPR_CountTracks(0)
 		media_track = RPR_GetTrack(0,track_idx)
-		self.track = media_track
-		return media_track, track_idx
+		sample.track = media_track
+		# return media_track
 
   def get_removable_stacked(self, insert_idx):
     return {(s1, s2) for (s1, s2) in self.stacked if s1 != insert_idx and s2 != insert_idx}
