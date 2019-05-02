@@ -9,6 +9,8 @@ from preprocess import process_loaded_audio
 from keras.models import load_model
 from keras.models import Model
 
+from sys import argv
+
 music_model = load_model('music_model.h5')
 embed_model = Model(inputs=music_model.input, outputs=music_model.get_layer('embed').output)
 K.set_learning_phase(0)
@@ -35,4 +37,9 @@ def get_reward(i_path, o_path):
   print(o_embed.shape)
   # TODO: length correction to input and 
   return np.linalg.norm(i_embed - o_embed)
+
+if __name__ == '__main__':
+  i_path = argv[1]
+  o_path = argv[2]
+  print(get_reward(i_path, o_path))
 
