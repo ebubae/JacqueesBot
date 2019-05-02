@@ -56,7 +56,9 @@ class State:
 
   # TODO: Dev this is all you
   def export(self):
-    pass
+    export_file = self.export_path + "\out.wav"
+    RPR_RenderFileSection(self.project, export_file,0,1,1)
+    return export_file
 
   def get_removable_stacked(self, insert_idx):
     '''
