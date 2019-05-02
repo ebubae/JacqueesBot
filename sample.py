@@ -1,5 +1,7 @@
 import params
 
+from librosa.core import load, get_duration
+
 class Sample:
   def __init__(self, path, instrument, pitch):
     '''
@@ -9,9 +11,12 @@ class Sample:
     pitch - the pitch of the instrument if it is pitched (e.g. "Bb", "A", None)
     '''
     self.path = str(path)
-    self.pitch = str(pitch)
+    self.pitch = int(pitch)
     self.instrument = str(instrument)
-    self.length = float(length)
+
+    aud = load(path)
+    self.length = get_duration(aud)
+
     self.track = None
 
   def __len__(self):
