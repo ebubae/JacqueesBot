@@ -14,7 +14,7 @@ class Sample:
     self.pitch = int(pitch)
     self.instrument = str(instrument)
 
-    aud = load(path)
+    aud, _ = load(path)
     self.length = get_duration(aud)
 
     self.track = None
