@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from action import Insert, Remove, INSERT, REMOVE
+from action import INSERT, REMOVE
 from state import State
 
 def do_action(state, act):

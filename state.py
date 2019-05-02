@@ -84,6 +84,9 @@ class State:
            "\nInserted:\n" + "\n".join(['{}. sample {} inserted @ {}'.format(idx, s_id, t) for idx, (s_id, t) in enumerate(self.inserted)]) + 
            "\nStacked:\n" + "\n".join(['{} and {}'.format(s1, s2) for s1, s2 in self.stacked])
 
+  def __str__(self):
+    return sellf.__repr__()
+
   def __eq__(self, o):
      return o.insert_id == self.inser_id if isinstance(o, Insert) else False 
 

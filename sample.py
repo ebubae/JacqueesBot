@@ -1,7 +1,7 @@
 import params
 
 class Sample:
-  def __init__(self, path, instrument, length, pitch):
+  def __init__(self, path, instrument, pitch):
     '''
     path - the file path of the sample (e.g. "/instruments/uke.wav")
     instrument - name of the instrument (e.g. "ukulele, kazoo")
