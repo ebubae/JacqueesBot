@@ -4,7 +4,7 @@ from action import INSERT, REMOVE
 from setup_experiment import setup
 from state import State
 
-setup()
+exp_dir = setup()
 
 def do_action(state, act):
   '''

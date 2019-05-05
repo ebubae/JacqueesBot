@@ -2,25 +2,60 @@ import json
 
 from copy import deepcopy
 
-from action import Insert, Remove, INSERT, REMOVE
+from action import Insert, Finish, INSERT, FINISH
+from reward import get_reward
 from sample import Sample
 
 class State:
   
-  def __init__(self, config, min_delta=0.1):
+  def __init__(self, config):
     '''
     config - the filename for a JSON file that lists all the samples and their attributes
-    min_delta - the minimum difference in insert times (default 0.1)
+    eps - the minimum difference in insert times (default 0.1)
+    delta - how long
     '''
     self.samples = []
     self.inserted = []
     self.times = []
     self.stacked = set()
-    self.min_delta = min_delta
+    self.terminal = False
+    self.cursor = 0
+
     data = json.load(config)
-    for d in data[('samples')]:
+
+    self.num_tracks = data['num_tracks']
+    self.inspiration = data['inspiration']
+    self.delta = float(data['delta'])
+    self.eps = float(data['eps'])
+
+    for d in data['samples']:
       s = Sample(**d)
       self.samples.append(s)
+
+  def getPossibleActions(self): pass
+
+  def takeAction(self, act):
+    new_state = deepcopy(self)
+
+    if act.action_type == FINISH:
+      new_state.terminal = True
+      new_state.cursor = max((t[1] for t in new_state.times))
+      return new_state
+    
+    assert(act.action_type == INSERT)
+    
+    new_state.insert(act.sample_id, self.time)
+    return new_state
+
+
+  def isTerminal(self): return self.terminal
+
+  def getReward(self):
+    assert(self.terminal)
+    # TODO: Dev this is you
+    # First, clear REAPER state and repalce with self state
+    out_file = self.export()
+    return get_reward(self.inspiration, out_file, self.eps, self.delta)
 
   def remove(self, insert_id):
     '''
@@ -32,7 +67,7 @@ class State:
     if to_remove:
       track = samples[to_remove[0]].track
       self.inserted[act.insert_id] = None
-      self.stacked -= self.get_removable_stacked(insert_id)
+      #self.stacked -= self.get_removable_stacked(insert_id)
       RPR_DeleteTrack(track)
 
   def insert(self, sample_id, t):
@@ -44,7 +79,7 @@ class State:
     start_time = t
     end_time = t + len(sample)
 
-    self.stacked |= self.get_new_stacked(sample_id, t)
+    #self.stacked |= self.get_new_stacked(sample_id, t)
 
     self.times.append((start_time, end_time))
     self.inserted.append((sample_id, t))

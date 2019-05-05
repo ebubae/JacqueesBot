@@ -1,5 +1,5 @@
 INSERT = 1
-REMOVE = 2
+FINISH = 2
 
 class Insert:
   def __init__(self, sample_id, time):
@@ -19,16 +19,15 @@ class Insert:
   def __hash__(self):
     return hash(self.__repr__())
 
-class Remove:
-  def __init__(self, insert_id):
-    self.insert_id = insert_id
-    self.action_type = REMOVE
+class Finish:
+  def __init__(self):
+    self.action_type = FINISH
 
   def __repr__(self):
-    return "Remove({})".format(self.sample_id)
+    return "Finish()"
 
   def __eq__(self, o):
-     return o.insert_id == self.inser_id if isinstance(o, Insert) else False 
+     return isinstance(o, Finish)
 
   def __ne__(self, o):
     return not self == o

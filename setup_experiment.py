@@ -1,6 +1,6 @@
 from glob import glob
 from os import listdir, makedirs
-from os.path import join
+from os.path import exists, join
 from json import dump
 from random import randint, random, choice
 
@@ -10,9 +10,20 @@ def random_ees():
     final_ee += "e" if random() < 0.5 else "E"
   return final_ee
 
-def setup():
-  print("Welcome to JacqueesBot. {}!".format(random_ees()))
-  ("What song do you want to Jacquees? ")
+def set_inspiration():
+  '''
+  Returns a valid  user-generated inspiration song filepath
+  '''
+  inspiration = raw_input("First things first. What song do you want to Jacqu{}s? ".format(random_ees()))
+  song_added = False
+
+  while not exists(inspiration) and inspiration.endswith('.wav'):
+    print('\'{}\' is not a valid file path. Try again pl{}ase!'.format(inspiration, random_ees()))
+    inspiration = raw_input("What song do you want to Jacqu{}s? ".format(random_ees()))
+
+  return inspiration
+
+def set_samples():
   samples = []
   files_dir = 'samples/nsynth-valid/audio/'
   all_files = listdir(files_dir)
@@ -25,11 +36,17 @@ def setup():
   done_adding = False
   while not done_adding:
     print("all the instruments are:\n" + "\t".join(instruments.keys()))
-    inst = raw_input("\n Add an instrument: (or type \'done\' to exit) ")
+    inst = raw_input("\n Add an instrument, insert a file path, or type \'done\' to exit: ")
     if inst.lower() == 'done':
       done_adding = True
       break
-    if inst not in instruments:
+    if exists(inst):
+      s_path = inst
+      inst_name = raw_input('instrument name: ')
+      pitch = raw_input('pitch: ')
+      data = {"instrument": inst_name, "pitch": pitch, "path": s_path}
+      samples.add(data)
+    elif inst not in instruments:
       print('\'{}\' is not an instrument. try again pl{}ase'.format(inst, random_ees()))
     else:
       for p in range(0, 128):
@@ -40,13 +57,54 @@ def setup():
           samples.append(data)
       print("samples added")
       instruments.pop(inst)
+      
+  return samples
 
+def name_experiment():
   print("\noh yeah you have to name the experiment too")
   exp_name = raw_input("what are you calling it? ")
+  return exp_name
+
+def set_tracks():
+  tracks_str = ""
+  while not tracks_str.isdigit():
+    track_str = raw_input("how many concurrent tracks? ")
+  return tracks_str
+
+def set_hyperparameters():
+  print("epsilon represents the smallest distance between insert times (in seconds)")
+  eps_set = False
+  while not eps_set:
+    e_str = raw_input("eps = ")
+    try:
+      eps = float(e_str)
+      eps_set = True
+    except ValueError:
+      print("{} is not a number. Try again pl{}ase".format(e_str, random_ees()))
+
+  print("delta represents the max distance you can add after the input song (in seconds)")
+  delta_set = False
+  while not delta_set:
+    d_str = raw_input("delta = ")
+    try:
+      delta = float(d_str)
+      delta_set = True
+    except ValueError:
+      print("{} is not a number. Try again pl{}ase".format(d_str, random_ees()))
+
+  return eps, delta
+
+def setup():
+  print("Welcome to JacqueesBot. {}!".format(random_ees()))
+
+  inspiration = set_inspiration()
+  samples = set_samples()
+  exp_name = name_experiment()
+  eps, delta = set_hyperparameters()
+  num_tracks = set_tracks()
   exp_dir = join('experiments', exp_name)
   makedirs(exp_dir)
-  dump({"samples": samples}, open(join(exp_dir, "config.json"), 'w'))
+  dump({"num_tracks": num_tracks, "samples": samples, "inspiration": inspiration, "eps": eps, "delta": delta}, open(join(exp_dir, "config.json"), 'w'))
 
-
-
+  return exp_dir
 
