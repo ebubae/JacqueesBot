@@ -27,6 +27,8 @@ class State:
     self.inspiration = data['inspiration']
     self.delta = float(data['delta'])
     self.eps = float(data['eps'])
+    self.project_name = data['project_name']
+    self.export_path = data['export_path']
 
     for d in data['samples']:
       s = Sample(**d)
@@ -81,18 +83,25 @@ class State:
 
     #self.stacked |= self.get_new_stacked(sample_id, t)
 
-    self.times.append((start_time, end_time))
-    self.inserted.append((sample_id, t))
     # reaper deletion
-		track = RPR_InsertMedia(params.MEDIA_FILE_LOCATION + sample.path, 1)
+		RPR_InsertMedia(params.MEDIA_FILE_LOCATION + sample.path, 1)
 		track_idx = RPR_CountTracks(0)
 		media_track = RPR_GetTrack(0,track_idx)
-		sample.track = media_track
+		#sample.track = media_track
+
+    self.times.append((start_time, end_time))
+    self.inserted.append((sample_id, t, media_track))
+
 
   # TODO: Dev this is all you
   def export(self):
+    # for i in range(RPR_CountTracks(0)):
+      # RPR_DeleteTrack(track)
+    for _, _, track in inserted:
+      RPR_DeleteTrack(track)
+
     export_file = self.export_path + "\out.wav"
-    RPR_RenderFileSection(self.project, export_file,0,1,1)
+    status = RPR_RenderFileSection(self.project_name, export_file,0,1,1)
     return export_file
 
   def get_removable_stacked(self, insert_idx):
