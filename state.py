@@ -30,7 +30,7 @@ class State:
     self.max_time = len(self.inspiration_sample) + self.delta
     self.eps = float(data['eps'])
     self.project_name = data['project_name']
-    self.export_path = data['export_path']
+    # self.export_path = data['export_path']
 
     for d in data['samples']:
       s = Sample(**d)
@@ -111,14 +111,13 @@ class State:
         RPR_SetMediaItemPosition(media_item, time, True)
 
   # TODO: Dev this is all you
-  def export(self, project_path=None):
+  def export(self, export_file='out.wav'):
     # for i in range(RPR_CountTracks(0)):
       # RPR_DeleteTrack(track)
-    if project_path is None:
-      project_path = self.project_name
+
     self.show()
-    export_file = self.export_path + "\out.wav"
-    status = RPR_RenderFileSection(project_path, export_file,0,1,1)
+    # export_file = self.export_path + "\out.wav"
+    status = RPR_RenderFileSection(self.project_name, export_file,0,1,1)
     return export_file
 
   def get_removable_stacked(self, insert_idx):
