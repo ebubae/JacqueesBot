@@ -16,9 +16,10 @@ exp_dir = setup()
 chdir(exp_dir)
 
 init_state = State('config.json')
-mcts = mcts(timeLimit=MAX_RUNTIME)
+mcts = mcts(timeLimit=MAX_RUNTIME * 1000)
 mcts.search(initalState=init_state)
 final_state = mcts.getBestChild(mcts.root, 0)
 final_state.export()
+# TODO: pickle mcts tree`
 print("Final reward: {}".format(final_state.getReward()))
 
