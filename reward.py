@@ -34,7 +34,7 @@ def get_reward(i_path, o_path, eps, delta, alpha=0.5, beta=12.0):
   processed_input  = [process_loaded_audio(a) for a in input_blocks]
   processed_output = [process_loaded_audio(a) for a in output_blocks]
   clip_len = min(len(processed_input), len(processed_output))
-  processed_input = np.array(input_audio[:clip_len]
+  processed_input = np.array(input_audio[:clip_len])
   processed_output = np.array(output_audio[:clip_len])
   i_embed = embed_model.predict(processed_input)
   o_embed = embed_model.predict(processed_output)
