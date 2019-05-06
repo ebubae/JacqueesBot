@@ -38,11 +38,9 @@ class State:
 
   def getPossibleActions(self):
     c = self.cursor
-    return [Hold(track) for track in xrange(self.num_tracks) if c[t] < self.max_time] + 
-           [Insert(s, time, track) for s in xrange(len(self.samples)) 
+    return [Hold(track) for track in xrange(self.num_tracks) if c[t] < self.max_time] + [Insert(s, time, track) for s in xrange(len(self.samples)) 
                                    for time in c 
-                                   for track in xrange(self.num_tracks) if all((s, time) not in tr for tr in inserted)] +
-           [Finish()]
+                                   for track in xrange(self.num_tracks) if all((s, time) not in tr for tr in inserted)] + [Finish()]
     
 
   def takeAction(self, act):
@@ -51,7 +49,7 @@ class State:
     if act.action_type == FINISH:
       new_state.terminal = True
       return new_state
-    elif act.action_type == INSERT
+    elif act.action_type == INSERT:
       new_state.insert(act.sample_id, act.time, act.track)
     elif act.action_type == HOLD:
       new_state.cursor[act.track] += self.eps
@@ -91,25 +89,35 @@ class State:
     #self.stacked |= self.get_new_stacked(sample_id, t)
 
     # reaper deletion
-		RPR_InsertMedia(params.MEDIA_FILE_LOCATION + sample.path, 1)
-		track_idx = RPR_CountTracks(0)
-		media_track = RPR_GetTrack(0,track_idx)
+  #   RPR_InsertMedia(params.MEDIA_FILE_LOCATION + sample.path, 1)
+  #   track_idx = RPR_CountTracks(0)
+		# media_track = RPR_GetTrack(0,track_idx)
 		#sample.track = media_track
 
     #self.times.append((start_time, end_time))
-    self.inserted[track].add((sample_id, t, media_track))
+    self.inserted[track].add((sample_id, t))
     self.cursor[track] = end_time
 
+  def show(self):
+    for track_idx in xrange(num_tracks):
+      RPR_DeleteTrack(RPR_GetTrack(0, track_idx))
+
+    for curr_track, inserted_samples in enumerate(self.inserted):
+      media_track = RPR_GetTrack(0, curr_track)
+      RPR_SetTrackSelected(media_track, True)
+      for (s, time) in inserted_samples:
+        RPR_InsertMedia(params.MEDIA_FILE_LOCATION + s.path, 0)
+        media_item = RPR_GetMediaItem(0, CountMediaItems(0)-1)
+        RPR_SetMediaItemPosition(media_item, time, True)
 
   # TODO: Dev this is all you
-  def export(self):
+  def export(self, project_path=self.project_name):
     # for i in range(RPR_CountTracks(0)):
       # RPR_DeleteTrack(track)
-    for _, _, track in inserted:
-      RPR_DeleteTrack(track)
 
+    self.show()
     export_file = self.export_path + "\out.wav"
-    status = RPR_RenderFileSection(self.project_name, export_file,0,1,1)
+    status = RPR_RenderFileSection(project_path, export_file,0,1,1)
     return export_file
 
   def get_removable_stacked(self, insert_idx):
@@ -134,9 +142,7 @@ class State:
     return new_stacked
  
   def __repr__(self):
-    return "\nCurrent state\n\nSamples:\n" + "\n".join(['{}. {}'.format(idx, str(s)) for idx, s in enumerate(self.samples)]) +
-           "\nInserted:\n" + "\n".join(['{}. sample {} inserted @ {}'.format(idx, s_id, t) for idx, (s_id, t) in enumerate(self.inserted)]) + 
-           "\nStacked:\n" + "\n".join(['{} and {}'.format(s1, s2) for s1, s2 in self.stacked])
+    return "\nCurrent state\n\nSamples:\n" + "\n".join(['{}. {}'.format(idx, str(s)) for idx, s in enumerate(self.samples)]) + "\nInserted:\n" + "\n".join(['{}. sample {} inserted @ {}'.format(idx, s_id, t) for idx, (s_id, t) in enumerate(self.inserted)]) + "\nStacked:\n" + "\n".join(['{} and {}'.format(s1, s2) for s1, s2 in self.stacked])
 
   def __str__(self):
     return sellf.__repr__()
