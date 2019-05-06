@@ -111,10 +111,11 @@ class State:
         RPR_SetMediaItemPosition(media_item, time, True)
 
   # TODO: Dev this is all you
-  def export(self, project_path=self.project_name):
+  def export(self, project_path=None):
     # for i in range(RPR_CountTracks(0)):
       # RPR_DeleteTrack(track)
-
+    if project_path is None:
+      project_path = self.project_name
     self.show()
     export_file = self.export_path + "\out.wav"
     status = RPR_RenderFileSection(project_path, export_file,0,1,1)
