@@ -1,23 +1,24 @@
+
 from copy import deepcopy
+from os import chdir
 
 from action import INSERT, REMOVE
 from setup_experiment import setup
 from state import State
 
+from mcts import mcts
+
+# time limit for MCTS in seconds
+MAX_RUNTIME = 120
+
+# promt user for set up data, save json, cd into project dir
 exp_dir = setup()
+chdir(exp_dir)
 
-def do_action(state, act):
-  '''
-  Add or removethe sample to the state. This should add to our model as well as 
-  onto a new Reaper track
+init_state = State('config.json')
+mcts = mcts(timeLimit=MAX_RUNTIME)
+mcts.search(initalState=init_state)
+final_state = mcts.getBestChild(mcts.root, 0)
+final_state.export()
+print("Final reward: {}".format(final_state.getReward()))
 
-  Return new state without modifying state passed in
-  '''
-  new_state = deepcopy(state)
-  if act.action_type == REMOVE:
-    new_state.remove(act.insert_id)
-  elif act.action_type == INSERT
-    # TODO: error check that time and sample ID are appropriate
-    new_state.insert(act.sample_id, t)
-
-  return new_state
