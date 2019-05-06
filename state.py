@@ -2,7 +2,7 @@ import json
 
 from copy import deepcopy
 
-from action import Insert, Finish, INSERT, FINISH
+from action import Insert, Finish, Hold, INSERT, FINISH, HOLD
 from reward import get_reward
 from sample import Sample
 
@@ -14,18 +14,20 @@ class State:
     eps - the minimum difference in insert times (default 0.1)
     delta - how long
     '''
-    self.samples = []
     self.inserted = []
-    self.times = []
+    #self.times = []
     self.stacked = set()
     self.terminal = False
-    self.cursor = 0
 
     data = json.load(config)
 
     self.num_tracks = data['num_tracks']
+    self.cursor = [0 for _ in xrange(num_tracks)]
+    self.samples = [set() for _ in xrange(num_tracks)]
     self.inspiration = data['inspiration']
+    self.inspiration_sample = Sample(self.inspiration, "INSP", None)
     self.delta = float(data['delta'])
+    self.max_time = len(self.inspiration_sample) + self.delta
     self.eps = float(data['eps'])
     self.project_name = data['project_name']
     self.export_path = data['export_path']
@@ -34,19 +36,25 @@ class State:
       s = Sample(**d)
       self.samples.append(s)
 
-  def getPossibleActions(self): pass
+  def getPossibleActions(self):
+    c = self.cursor
+    return [Hold(track) for track in xrange(self.num_tracks) if c[t] < self.max_time] + 
+           [Insert(s, time, track) for s in xrange(len(self.samples)) 
+                                   for time in c 
+                                   for track in xrange(self.num_tracks) if all((s, time) not in tr for tr in inserted)] +
+           [Finish()]
+    
 
   def takeAction(self, act):
     new_state = deepcopy(self)
 
     if act.action_type == FINISH:
       new_state.terminal = True
-      new_state.cursor = max((t[1] for t in new_state.times))
       return new_state
-    
-    assert(act.action_type == INSERT)
-    
-    new_state.insert(act.sample_id, self.time)
+    elif act.action_type == INSERT
+      new_state.insert(act.sample_id, act.time, act.track)
+    elif act.action_type == HOLD:
+      new_state.cursor[act.track] += self.eps
     return new_state
 
 
@@ -54,10 +62,9 @@ class State:
 
   def getReward(self):
     assert(self.terminal)
-    # TODO: Dev this is you
-    # First, clear REAPER state and repalce with self state
     out_file = self.export()
-    return get_reward(self.inspiration, out_file, self.eps, self.delta)
+    #TODO ask Dev what happens when you try to export empty
+    return -sys.maxint if all(len(i) == 0 for i in inserted) else get_reward(self.inspiration, out_file, self.eps, self.delta)
 
   def remove(self, insert_id):
     '''
@@ -72,7 +79,7 @@ class State:
       #self.stacked -= self.get_removable_stacked(insert_id)
       RPR_DeleteTrack(track)
 
-  def insert(self, sample_id, t):
+  def insert(self, sample_id, t, track):
     '''
     Inserts a sample into the state at a specific time
     '''
@@ -89,8 +96,9 @@ class State:
 		media_track = RPR_GetTrack(0,track_idx)
 		#sample.track = media_track
 
-    self.times.append((start_time, end_time))
-    self.inserted.append((sample_id, t, media_track))
+    #self.times.append((start_time, end_time))
+    self.inserted[track].add((sample_id, t, media_track))
+    self.cursor[track] = end_time
 
 
   # TODO: Dev this is all you
