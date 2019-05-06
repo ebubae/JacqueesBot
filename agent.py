@@ -1,8 +1,5 @@
-
-from copy import deepcopy
 from os import chdir
 
-from action import INSERT, REMOVE
 from setup_experiment import setup
 from state import State
 
