@@ -1,5 +1,5 @@
 from glob import glob
-from os import listdir, makedirs
+from os import listdir, makedirs, getcwd
 from os.path import exists, join
 from json import dump
 from random import randint, random, choice
@@ -53,7 +53,7 @@ def set_samples():
         possible_samples = glob('{}{}*-{:03}-*.wav'.format(files_dir, instruments[inst], p))
         if possible_samples:
           s = choice(possible_samples)
-          data = {"instrument": instruments[inst], "pitch": p, "path": s}
+          data = {"instrument": instruments[inst], "pitch": p, "path": getcwd() + '/' + s}
           samples.append(data)
       print("samples added")
       instruments.pop(inst)
@@ -66,10 +66,13 @@ def name_experiment():
   return exp_name
 
 def set_tracks():
-  tracks_str = ""
-  while not tracks_str.isdigit():
+  tracks_set = False
+  while not tracks_set:
     track_str = input("how many concurrent tracks? ")
-  return tracks_str
+    if track_str.isdigit():
+      return int(track_str)
+
+  return int(tracks_str)
 
 def set_hyperparameters():
   print("epsilon represents the smallest distance between insert times (in seconds)")
@@ -104,7 +107,7 @@ def setup():
   num_tracks = set_tracks()
   exp_dir = join('experiments', exp_name)
   makedirs(exp_dir)
-  dump({"num_tracks": num_tracks, "samples": samples, "inspiration": inspiration, "eps": eps, "delta": delta}, open(join(exp_dir, "config.json"), 'w'))
+  dump({"export_path": join(getcwd(), exp_dir), "project_name": exp_name, "num_tracks": num_tracks, "samples": samples, "inspiration": inspiration, "eps": eps, "delta": delta}, open(join(exp_dir, "config.json"), 'w'))
 
   return exp_dir
 
