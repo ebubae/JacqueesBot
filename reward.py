@@ -22,7 +22,7 @@ def partition_audio(aud, sr, eps, block_size=3):
 
   Return a generator of all ready to be processed audio blocks
   '''
-  return (aud[off: block_size * sr + off] for off in xrange(0, len(aud), sr))
+  return (aud[off: block_size * sr + off] for off in range(0, len(aud), sr))
   #return (load(aud_path, offset=i, duration=block_size)[0] for i in xrange(int(duration) - block_size + 1))
 
 
