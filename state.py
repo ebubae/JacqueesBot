@@ -1,8 +1,10 @@
 import json
 
 from copy import deepcopy
+from os.path import join
 
 import beyond.Reaper
+import sys
 
 from action import Insert, Finish, Hold, INSERT, FINISH, HOLD
 from reward import get_reward
@@ -16,23 +18,23 @@ class State:
     eps - the minimum difference in insert times (default 0.1)
     delta - how long
     '''
-    self.inserted = []
+    self.samples = []
     #self.times = []
     self.stacked = set()
     self.terminal = False
 
-    data = json.load(config)
+    data = json.load(open(config, 'r'))
 
     self.num_tracks = data['num_tracks']
-    self.cursor = [0 for _ in range(num_tracks)]
-    self.samples = [set() for _ in range(num_tracks)]
+    self.inserted = [set() for _ in range(self.num_tracks)]
+    self.cursor = [0 for _ in range(self.num_tracks)]
     self.inspiration = data['inspiration']
-    self.inspiration_sample = Sample(self.inspiration, "INSP", None)
+    self.inspiration_sample = Sample(self.inspiration, "INSP", -1)
     self.delta = float(data['delta'])
-    self.max_time = len(self.inspiration_sample) + self.delta
+    self.max_time = self.inspiration_sample.length + self.delta
     self.eps = float(data['eps'])
     self.project_name = data['project_name']
-    # self.export_path = data['export_path']
+    self.export_path = data['export_path']
 
     for d in data['samples']:
       s = Sample(**d)
@@ -40,9 +42,12 @@ class State:
 
   def getPossibleActions(self):
     c = self.cursor
-    return [Hold(track) for track in range(self.num_tracks) if c[t] < self.max_time] + [Insert(s, time, track) for s in range(len(self.samples)) 
+    return [Hold(track) for track in range(self.num_tracks) if c[track] < self.max_time] + \
+           [Insert(s, time, track) for s in range(len(self.samples)) 
                                    for time in c 
-                                   for track in range(self.num_tracks) if all((s, time) not in tr for tr in inserted)] + [Finish()]
+                                   for track in range(self.num_tracks) if all((s, time) not in tr for tr in self.inserted)
+                                                                          and time < self.max_time] + \
+           [Finish()]
     
 
   def takeAction(self, act):
@@ -60,11 +65,10 @@ class State:
 
   def isTerminal(self): return self.terminal
 
+
   def getReward(self):
-    assert(self.terminal)
     out_file = self.export()
-    #TODO ask Dev what happens when you try to export empty
-    return -sys.maxint if all(len(i) == 0 for i in inserted) else get_reward(self.inspiration, out_file, self.eps, self.delta)
+    return -sys.maxsize if all(len(i) == 0 for i in self.inserted) else get_reward(self.inspiration, out_file, self.eps, self.delta)
 
   def remove(self, insert_id):
     '''
@@ -83,10 +87,11 @@ class State:
     '''
     Inserts a sample into the state at a specific time
     '''
+    print("Inserting sample {} at time {} on track{}".format(sample_id, t, track))
     # TODO: check if valid sample ID and time
-    sample = samples[sample_id]
+    sample = self.samples[sample_id]
     start_time = t
-    end_time = t + len(sample)
+    end_time = t + sample.length
 
     #self.stacked |= self.get_new_stacked(sample_id, t)
 
@@ -102,25 +107,26 @@ class State:
 
   def show(self):
     with Reaper as r:
-      for track_idx in range(num_tracks):
+      for track_idx in range(self.num_tracks):
         r.DeleteTrack(r.GetTrack(0, track_idx))
+
+      for _ in range(self.num_tracks):
+        r.InsertTrackAtIndex(0, 0)
 
       for curr_track, inserted_samples in enumerate(self.inserted):
         media_track = r.GetTrack(0, curr_track)
         r.SetTrackSelected(media_track, True)
         for (s, time) in inserted_samples:
-          r.InsertMedia(params.MEDIA_FILE_LOCATION + s.path, 0)
+          r.InsertMedia(self.samples[s].path, 0)
           media_item = r.GetMediaItem(0, r.CountMediaItems(0)-1)
           r.SetMediaItemPosition(media_item, time, True)
 
   # TODO: Dev this is all you
   def export(self, export_file='out.wav'):
-    # for i in range(RPR_CountTracks(0)):
-      # RPR_DeleteTrack(track)
-
     self.show()
-    # export_file = self.export_path + "\out.wav"
-    status = Reaper.RenderFileSection(self.project_name, export_file,0,1,1)
+    Reaper.Main_SaveProject(0, False)
+    to_export = join(self.export_path, export_file)
+    status = Reaper.RenderFileSection('/Users/echuba/JacqueesBot/jacquees.RPP', to_export,0,1,1)
     return export_file
 
   def get_removable_stacked(self, insert_idx):
