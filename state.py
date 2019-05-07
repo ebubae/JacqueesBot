@@ -2,6 +2,8 @@ import json
 
 from copy import deepcopy
 
+import beyond.Reaper
+
 from action import Insert, Finish, Hold, INSERT, FINISH, HOLD
 from reward import get_reward
 from sample import Sample
@@ -22,8 +24,8 @@ class State:
     data = json.load(config)
 
     self.num_tracks = data['num_tracks']
-    self.cursor = [0 for _ in xrange(num_tracks)]
-    self.samples = [set() for _ in xrange(num_tracks)]
+    self.cursor = [0 for _ in range(num_tracks)]
+    self.samples = [set() for _ in range(num_tracks)]
     self.inspiration = data['inspiration']
     self.inspiration_sample = Sample(self.inspiration, "INSP", None)
     self.delta = float(data['delta'])
@@ -38,9 +40,9 @@ class State:
 
   def getPossibleActions(self):
     c = self.cursor
-    return [Hold(track) for track in xrange(self.num_tracks) if c[t] < self.max_time] + [Insert(s, time, track) for s in xrange(len(self.samples)) 
+    return [Hold(track) for track in range(self.num_tracks) if c[t] < self.max_time] + [Insert(s, time, track) for s in range(len(self.samples)) 
                                    for time in c 
-                                   for track in xrange(self.num_tracks) if all((s, time) not in tr for tr in inserted)] + [Finish()]
+                                   for track in range(self.num_tracks) if all((s, time) not in tr for tr in inserted)] + [Finish()]
     
 
   def takeAction(self, act):
@@ -75,7 +77,7 @@ class State:
       track = samples[to_remove[0]].track
       self.inserted[act.insert_id] = None
       #self.stacked -= self.get_removable_stacked(insert_id)
-      RPR_DeleteTrack(track)
+      # RPR_DeleteTrack(track)
 
   def insert(self, sample_id, t, track):
     '''
@@ -99,16 +101,17 @@ class State:
     self.cursor[track] = end_time
 
   def show(self):
-    for track_idx in xrange(num_tracks):
-      RPR_DeleteTrack(RPR_GetTrack(0, track_idx))
+    with Reaper as r:
+      for track_idx in range(num_tracks):
+        r.DeleteTrack(r.GetTrack(0, track_idx))
 
-    for curr_track, inserted_samples in enumerate(self.inserted):
-      media_track = RPR_GetTrack(0, curr_track)
-      RPR_SetTrackSelected(media_track, True)
-      for (s, time) in inserted_samples:
-        RPR_InsertMedia(params.MEDIA_FILE_LOCATION + s.path, 0)
-        media_item = RPR_GetMediaItem(0, CountMediaItems(0)-1)
-        RPR_SetMediaItemPosition(media_item, time, True)
+      for curr_track, inserted_samples in enumerate(self.inserted):
+        media_track = r.GetTrack(0, curr_track)
+        r.SetTrackSelected(media_track, True)
+        for (s, time) in inserted_samples:
+          r.InsertMedia(params.MEDIA_FILE_LOCATION + s.path, 0)
+          media_item = r.GetMediaItem(0, r.CountMediaItems(0)-1)
+          r.SetMediaItemPosition(media_item, time, True)
 
   # TODO: Dev this is all you
   def export(self, export_file='out.wav'):
@@ -117,7 +120,7 @@ class State:
 
     self.show()
     # export_file = self.export_path + "\out.wav"
-    status = RPR_RenderFileSection(self.project_name, export_file,0,1,1)
+    status = Reaper.RenderFileSection(self.project_name, export_file,0,1,1)
     return export_file
 
   def get_removable_stacked(self, insert_idx):
