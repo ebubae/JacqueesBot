@@ -15,13 +15,10 @@ class Sample:
     self.instrument = str(instrument)
 
     aud, _ = load(path)
-    self.length = get_duration(aud)
+    self.length = float(get_duration(aud))
 
     self.track = None
 
-  def __len__(self):
-    return self.length
-  
   def __str__(self):
     return "{} sample @ {}".format(self.instrument, self.path)
     
